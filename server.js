@@ -1,6 +1,28 @@
 const db = require("./config/dbConfig");
-const q = "SELECT * FROM books";
-db.query(q, (err, data) => {
-  if (err) console.log(err);
-  console.log(data);
+const express = require("express");
+const app = express();
+app.use(express.json());
+app.get("/books", (req, res) => {
+  const q = "SELECT * FROM books";
+  db.query(q, (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  });
+});
+app.post("/books", (req, res) => {
+  const q =
+    "insert into books(`title`,`description`,`cover`,`author`) values(?)";
+  const values = [
+    req.body.title,
+    req.body.desc,
+    req.body.cover,
+    req.body.author,
+  ];
+  db.query(q, [values], (err, data) => {
+    if (err) return res.json(err);
+    return res.json("The book has been created");
+  });
+});
+app.listen(3500, () => {
+  console.log("Connected to backend");
 });
