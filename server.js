@@ -9,6 +9,15 @@ app.get("/books", (req, res) => {
     return res.json(data);
   });
 });
+app.get("/books/:id", (req, res) => {
+  const q = "SELECT * FROM books where id=?";
+  const bookId = req.params.id;
+
+  db.query(q, [bookId], (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  });
+});
 app.post("/books", (req, res) => {
   const q =
     "insert into books(`title`,`description`,`cover`,`author`) values(?)";
