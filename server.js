@@ -55,6 +55,22 @@ app.delete("/books/:id", (req, res) => {
     return res.json("Book has been deleted successfully");
   });
 });
+app.get("/users", (req, res) => {
+  const q = "SELECT * FROM users";
+  db.query(q, (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  });
+});
+app.get("/users/:id", (req, res) => {
+  const q = "SELECT * FROM users where id=?";
+  const userId = req.params.id;
+
+  db.query(q, [userId], (err, data) => {
+    if (err) return res.json(err);
+    return res.json(data);
+  });
+});
 app.listen(3500, () => {
   console.log("Connected to backend");
 });
