@@ -71,6 +71,23 @@ app.get("/users/:id", (req, res) => {
     return res.json(data);
   });
 });
+app.post("/users", (req, res) => {
+  const q = "insert into users(`login`,`pass`) values(?)";
+  const values = [req.body.login, req.body.pass];
+  const q2 = "SELECT * FROM users where login=?";
+  db.query(q2, [req.body.login], (err, data) => {
+    if (err) return res.json(err);
+    if (data.length > 0) {
+      return res.json("This login is already taken.");
+    } else {
+      db.query(q, [values], (err, data) => {
+        if (err) return res.json(err);
+        return res.json("The user has been created");
+      });
+    }
+  });
+});
+
 app.listen(3500, () => {
   console.log("Connected to backend");
 });
