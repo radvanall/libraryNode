@@ -87,6 +87,14 @@ app.post("/users", (req, res) => {
     }
   });
 });
+app.delete("/users/:id", (req, res) => {
+  const userId = req.params.id;
+  const q = "delete from users  where id=?";
+  db.query(q, [userId], (err, data) => {
+    if (err) return res.json(err);
+    return res.json("The user has been deleted successfully");
+  });
+});
 
 app.listen(3500, () => {
   console.log("Connected to backend");
