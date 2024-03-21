@@ -96,6 +96,16 @@ app.delete("/users/:id", (req, res) => {
   });
 });
 
+app.put("/users/:id", (req, res) => {
+  const userId = req.params.id;
+  const q = "update users set `login`=?, `pass`=? where id=?";
+  const values = [req.body.login, req.body.pass];
+  db.query(q, [...values, userId], (err, data) => {
+    if (err) return res.json(err);
+    return res.json("User has been updated successfully");
+  });
+});
+
 app.listen(3500, () => {
   console.log("Connected to backend");
 });
