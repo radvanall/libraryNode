@@ -1,4 +1,4 @@
-const db = require("../config/dbConfig");
+const db = require("../../config/dbConfig");
 const getAllBooks = async () => {
   const q = "SELECT * FROM books";
   const [data] = await db.query(q);
