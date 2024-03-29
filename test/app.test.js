@@ -17,6 +17,8 @@ describe("testing the /books endpoint", () => {
       const bookId = 1;
       const response = await request(app).get(`/books/${bookId}`);
       expect(response.body.id).toEqual(bookId);
+      expect(response.body).toEqual(bookEx);
+      expect(response.status).toEqual(200);
     });
   });
 });

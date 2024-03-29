@@ -8,7 +8,7 @@ const {
 const getAllBooksController = async (req, res) => {
   try {
     const data = await getAllBooks();
-    return res.json(data);
+    return res.status(200).json(data);
   } catch (err) {
     return res.status(500).json(err.message);
   }
