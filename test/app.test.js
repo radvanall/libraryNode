@@ -10,6 +10,12 @@ const bookEx = {
   cover: "cover",
   author: "no autor",
 };
+const postBook = {
+  title: "test book",
+  desc: "This is a test book.",
+  cover: "cover",
+  author: "no autor",
+};
 describe("testing the /books endpoint", () => {
   describe("testing the get one book endpoint", () => {
     test("should return a book by id", async () => {
@@ -19,6 +25,27 @@ describe("testing the /books endpoint", () => {
       expect(response.body.id).toEqual(bookId);
       expect(response.body).toEqual(bookEx);
       expect(response.status).toEqual(200);
+    });
+  });
+  describe("given a book with title, description,cover and author", () => {
+    test("should respond with a 200 status code", async () => {
+      const response = await request(app).post("/books").send(postBook);
+      expect(response.status).toEqual(201);
+    });
+    test("should specify json in the content type header", async () => {
+      const response = await request(app).post("/books").send(postBook);
+      expect(response.headers["content-type"]).toEqual(
+        expect.stringContaining("json")
+      );
+    });
+    test("should get the title, desc, cover and author in the createBookController", async () => {
+      const response = await request(app).post("/books").send(postBook);
+      expect(book.createBook).toHaveBeenCalledWith([
+        "test book",
+        "This is a test book.",
+        "cover",
+        "no autor",
+      ]);
     });
   });
 });
