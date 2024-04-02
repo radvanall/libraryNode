@@ -16,6 +16,7 @@ const postBook = {
   cover: "cover",
   author: "no autor",
 };
+
 describe("testing the /books endpoint", () => {
   describe("testing the get one book endpoint", () => {
     test("should return a book by id", async () => {
@@ -39,13 +40,29 @@ describe("testing the /books endpoint", () => {
       );
     });
     test("should get the title, desc, cover and author in the createBookController", async () => {
-      const response = await request(app).post("/books").send(postBook);
+      await request(app).post("/books").send(postBook);
       expect(book.createBook).toHaveBeenCalledWith([
         "test book",
         "This is a test book.",
         "cover",
         "no autor",
       ]);
+    });
+    test("should get the title,desc,cover,author and id in the updateBook function", async () => {
+      await request(app).put(`/books/${1}`).send(postBook);
+      expect(book.updateBook).toHaveBeenCalledWith([
+        "test book",
+        "This is a test book.",
+        "cover",
+        "no autor",
+        "1",
+      ]);
+    });
+  });
+  describe("Testing the delete book endpoint", () => {
+    test("The endpoint should return status 201", async () => {
+      const response = await request(app).delete(`/books/${1}`);
+      expect(response.status).toEqual(201);
     });
   });
 });
