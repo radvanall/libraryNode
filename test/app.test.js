@@ -1,8 +1,10 @@
 const request = require("supertest");
 const book = require("../src/model/book");
+const user = require("../src/model/user");
 const app = require("../src/app");
 
 jest.mock("../src/model/book");
+jest.mock("../src/model/user");
 const bookEx = {
   id: 1,
   title: "test book",
@@ -63,6 +65,23 @@ describe("testing the /books endpoint", () => {
     test("The endpoint should return status 201", async () => {
       const response = await request(app).delete(`/books/${1}`);
       expect(response.status).toEqual(201);
+    });
+  });
+});
+const exUser = {
+  id: 1,
+  login: "test",
+  pass: "1111",
+};
+describe("testing the /users endpoint", () => {
+  describe("testing  get user by id endpoint", () => {
+    test("should return a user by id", async () => {
+      user.getUserById.mockReturnValue(exUser);
+      const userId = 1;
+      const response = await request(app).get(`/users/${userId}`);
+      expect(response.body.id).toEqual(userId);
+      expect(response.body).toEqual(exUser);
+      expect(response.status).toEqual(200);
     });
   });
 });
