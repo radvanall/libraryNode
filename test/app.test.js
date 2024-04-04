@@ -73,6 +73,14 @@ const exUser = {
   login: "test",
   pass: "1111",
 };
+const allUsers = [
+  {
+    id: 1,
+    login: "test",
+    pass: "1111",
+  },
+  { id: 2, login: "test2", pass: "2222" },
+];
 describe("testing the /users endpoint", () => {
   describe("testing  get user by id endpoint", () => {
     test("should return a user by id", async () => {
@@ -82,6 +90,34 @@ describe("testing the /users endpoint", () => {
       expect(response.body.id).toEqual(userId);
       expect(response.body).toEqual(exUser);
       expect(response.status).toEqual(200);
+    });
+  });
+  describe("testing the get all users endpoint", () => {
+    test("should return an array of users", async () => {
+      user.getAllUsers.mockReturnValue(allUsers);
+      const response = await request(app).get("/users");
+      expect(response.body).toEqual(allUsers);
+      expect(response.status).toEqual(200);
+    });
+  });
+  describe("testing the post new user endpoint", () => {
+    test("status code should be 200", async () => {
+      const response = await request(app).post("/users").send(exUser);
+      expect(response.status).toEqual(200);
+    });
+    test("status code should be 200", async () => {
+      const response = await request(app).post("/users").send(exUser);
+      expect(response.status).toEqual(200);
+    });
+    test("should specify json in the content type header", async () => {
+      const response = await request(app).post("/users").send(exUser);
+      expect(response.headers["content-type"]).toEqual(
+        expect.stringContaining("json")
+      );
+    });
+    test("should recive a password and a login in the createUser function", async () => {
+      await request(app).post("/users").send(exUser);
+      expect(user.createUser).toHaveBeenCalledWith(["test", "1111"]);
     });
   });
 });
