@@ -120,4 +120,16 @@ describe("testing the /users endpoint", () => {
       expect(user.createUser).toHaveBeenCalledWith(["test", "1111"]);
     });
   });
+  describe("testing the put endpoint", () => {
+    test("should recive a password and a login in the modifyUser function", async () => {
+      await request(app).put(`/users/${exUser.id}`).send(exUser);
+      expect(user.modifyUser).toHaveBeenCalledWith(["test", "1111", "1"]);
+    });
+    test("should respond with a 200 status", async () => {
+      const response = await request(app)
+        .put(`/users/${exUser.id}`)
+        .send(exUser);
+      expect(response.status).toEqual(201);
+    });
+  });
 });
