@@ -132,4 +132,10 @@ describe("testing the /users endpoint", () => {
       expect(response.status).toEqual(201);
     });
   });
+  describe("testing the delete user endpoint", () => {
+    test("The endpoint should return status 201", async () => {
+      const response = await request(app).delete(`/users/${1}`);
+      expect(response.status).toEqual(201);
+    });
+  });
 });
