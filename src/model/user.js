@@ -26,6 +26,8 @@ const createUser = async (values) => {
 };
 const deleteUser = async (userId) => {
   const q = "delete from users  where id=?";
+  const q2 = "delete from users_roles where users_id=?";
+  await db.query(q2, [userId]);
   await db.query(q, [userId]);
 };
 const modifyUser = async (values) => {
