@@ -10,6 +10,7 @@ const {
 } = require("../model/user");
 const validateUpdate = require("../utils/validateUpdateUser");
 const validateCreate = require("../utils/validateCreateUser");
+const createToken = require("../utils/createToken");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const getUsersController = async (req, res) => {
@@ -79,26 +80,23 @@ const authController = async (req, res) => {
     if (!result) return res.status(403).json("Password or nickname are wrong.");
     const match = await bcrypt.compare(req.body.pass, result.pass);
     if (!match) return res.status(403).json("Password or nickname are wrong.");
-    const accessToken = jwt.sign(
-      { username: result.login, roles: result.role },
-      process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "1m" }
-    );
-    const refreshToken = jwt.sign(
-      { username: result.login },
+    const userData = { username: result.login };
+    const refreshToken = createToken(
+      userData,
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "1d" }
+      "1d"
+    );
+    userData.roles = result.role;
+    const accessToken = createToken(
+      userData,
+      process.env.ACCESS_TOKEN_SECRET,
+      "1m"
     );
     await setToken([refreshToken, result.id]);
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
-    // res.cookie("access", accessToken, {
-    //   httpOnly: true,
-    //   maxAge: 60 * 1000,
-    // });
-    // return res.status(200).json("You have been authorized");
     return res.status(200).json({ accessToken });
   } catch (err) {
     console.log(err);
@@ -114,20 +112,20 @@ const handleRefreshToken = async (req, res) => {
   const foundUser = await getUserByToken(refreshToken);
   console.log("foundUser=", foundUser);
   if (!foundUser) return res.sendStatus(403);
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
-    if (err || foundUser.login !== decoded.username) return res.sendStatus(403);
-    const accessToken = jwt.sign(
-      { username: decoded.username, roles: foundUser.role },
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    if (decoded.username !== foundUser.login) return res.sendStatus(403);
+    console.log(decoded);
+    const userData = { username: decoded.username, roles: foundUser.role };
+    const accessToken = createToken(
+      userData,
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "1m" }
+      "1m"
     );
-    // res.cookie("access", accessToken, {
-    //   httpOnly: true,
-    //   maxAge: 60 * 1000,
-    // });
-    // return res.status(200).json("You have been authorized");
     res.json({ accessToken });
-  });
+  } catch (err) {
+    if (err) return res.sendStatus(403);
+  }
 };
 const handleLogout = async (req, res) => {
   const cookies = req.cookies;
