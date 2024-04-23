@@ -4,6 +4,8 @@ const userController = require("../controllers/userController");
 const verifyJWT = require("../middleware/verifyJWT");
 const ROLES_LIST = require("../../config/roles_list");
 const verifyRoles = require("../middleware/verifyRoles");
+const multerErrorHandler = require("../middleware/multerErrorHandler");
+const multipartMulter = require("../middleware/multipartMulter");
 router
   .route("/")
   .get(
@@ -11,7 +13,18 @@ router
     verifyRoles(ROLES_LIST.Admin),
     userController.getUsersController
   )
-  .post(userController.createUserController);
+  .post(
+    multipartMulter("images/users/").single("avatar"),
+    userController.createUserController,
+    multerErrorHandler
+  );
+router
+  .route("/change-avatar/:id")
+  .put(
+    multipartMulter("images/users/").single("avatar"),
+    userController.changeAvatarController,
+    multerErrorHandler
+  );
 router.route("/auth").get(userController.authController);
 router.route("/refresh").get(userController.handleRefreshToken);
 router.route("/logout").get(userController.handleLogout);

@@ -16,11 +16,19 @@ const createBook = async (values) => {
 };
 const updateBook = async (values) => {
   const q =
-    "update books set `title`=?, `description`=?, `cover`=?, `author`=? where id=?";
+    "update books set `title`=?, `description`=?,  `author`=? where id=?";
+  await db.query(q, values);
+};
+const changeCover = async (values) => {
+  const q = "update books set `cover`=? where id=?";
   await db.query(q, values);
 };
 const deleteBook = async (bookId) => {
   const q = "delete from books  where id=?";
+  const q2 = "update comments set book_id=null where book_id=?";
+  const q3 = "delete from books_genres where book_id=?";
+  await db.query(q3, [bookId]);
+  await db.query(q2, [bookId]);
   await db.query(q, [bookId]);
 };
 
@@ -30,4 +38,5 @@ module.exports = {
   createBook,
   updateBook,
   deleteBook,
+  changeCover,
 };

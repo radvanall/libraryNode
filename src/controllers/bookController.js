@@ -2,9 +2,16 @@ const {
   getAllBooks,
   getBookById,
   createBook,
+  changeCover,
   updateBook,
   deleteBook,
 } = require("../model/book");
+const deleteImage = require("../utils/deleteImage");
+const getFilePath = require("../utils/getFilePath");
+const fs = require("fs");
+const path = require("path");
+const FILE_PATH = path.join(__dirname, "..", "..", "images", "books");
+const validateCreateBook = require("../utils/validateCreateBook");
 const getAllBooksController = async (req, res) => {
   try {
     const data = await getAllBooks();
@@ -22,14 +29,17 @@ const getBookByIdController = async (req, res) => {
   }
 };
 const createBookController = async (req, res) => {
-  const values = [
-    req.body.title,
-    req.body.desc,
-    req.body.cover,
-    req.body.author,
-  ];
+  const valid = validateCreateBook(req);
+  if (!valid)
+    return res.status(401).json({ message: "All fields are required" });
+  let filePath = req?.file
+    ? getFilePath(req.file.originalname, FILE_PATH)
+    : null;
+
+  const values = [req.body.title, req.body.desc, filePath, req.body.author];
   try {
     await createBook(values);
+    if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
     return res.status(201).json("The book has been created");
   } catch (err) {
     console.log(err);
@@ -37,10 +47,12 @@ const createBookController = async (req, res) => {
   }
 };
 const updateBookController = async (req, res) => {
+  const valid = validateCreateBook(req);
+  if (!valid)
+    return res.status(401).json({ message: "All fields are required" });
   const values = [
     req.body.title,
     req.body.desc,
-    req.body.cover,
     req.body.author,
     req.params.id,
   ];
@@ -52,9 +64,29 @@ const updateBookController = async (req, res) => {
     return res.status(500).json(err.message);
   }
 };
+const changeCoverController = async (req, res) => {
+  try {
+    const book = await getBookById(req.params.id);
+    deleteImage(book.cover);
+    let filePath = req?.file
+      ? getFilePath(req.file.originalname, FILE_PATH)
+      : null;
+    const values = [filePath, req.params.id];
+    console.log("values i=", values);
+    await changeCover(values);
+    if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
+    return res
+      .status(200)
+      .json({ message: "The book cover has been changed." });
+  } catch (err) {
+    return res.status(400).json({ err: err.message });
+  }
+};
 const deleteBookController = async (req, res) => {
   try {
+    const book = await getBookById(req.params.id);
     await deleteBook(req.params.id);
+    deleteImage(book.cover);
     return res.status(201).json("Book has been deleted successfully");
   } catch (err) {
     return res.status(500).json(err.message);
@@ -66,4 +98,5 @@ module.exports = {
   createBookController,
   updateBookController,
   deleteBookController,
+  changeCoverController,
 };
