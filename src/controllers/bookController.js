@@ -8,13 +8,20 @@ const {
 } = require("../model/book");
 const deleteImage = require("../utils/deleteImage");
 const getFilePath = require("../utils/getFilePath");
+const validateGetAllBooks = require("../utils/validateGetAllBooks");
 const fs = require("fs");
 const path = require("path");
 const FILE_PATH = path.join(__dirname, "..", "..", "images", "books");
 const validateCreateBook = require("../utils/validateCreateBook");
 const getAllBooksController = async (req, res) => {
+  if (!validateGetAllBooks(req))
+    return res.status(404).json({ message: "No such page." });
   try {
-    const data = await getAllBooks();
+    const data = await getAllBooks(
+      parseInt(req.query.page),
+      parseInt(req.query.limit)
+    );
+
     return res.status(200).json(data);
   } catch (err) {
     return res.status(500).json(err.message);

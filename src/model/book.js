@@ -1,11 +1,22 @@
 const db = require("../../config/dbConfig");
-const getAllBooks = async () => {
-  const q = "SELECT * FROM books";
-  const [data] = await db.query(q);
-  return data;
+const getRowCount = require("../utils/getRowCount");
+const createPaginatedResult = require("../utils/createPaginatedResult");
+const setGeneres = require("../utils/setGenres");
+const getAllBooks = async (page, limit) => {
+  const q =
+    "SELECT b.id, b.title, b.author,b.cover," +
+    "GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b " +
+    "LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id  LIMIT ? OFFSET ?";
+
+  const offset = (page - 1) * limit;
+  const [data] = await db.query(q, [limit, offset]);
+  setGeneres(data);
+  const totalBooks = await getRowCount("books");
+  return createPaginatedResult(page, limit, offset, totalBooks, data);
 };
 const getBookById = async (bookId) => {
-  const q = "SELECT * FROM books where id=?";
+  const q =
+    "SELECT b.id,b.title,b.description,b.cover,b.author,count(b.id) as totalComments FROM books b left JOIN comments c on c.book_id=b.id where b.id=? group by b.id";
   const [data] = await db.query(q, [bookId]);
   return data[0];
 };
