@@ -6,7 +6,9 @@ const getAllUsers = async () => {
 };
 const getUserById = async (userId) => {
   console.log("getid=", userId);
-  const q = "SELECT id,login,pass,avatar FROM users where id=?";
+  const q =
+    "select u.id,u.login,u.avatar,r.role,count(c.comment) as totalComments from users u left join users_roles ur on u.id=ur.users_id left join roles r on r.id=ur.roles_id left join comments c on c.user_id=u.id where u.id=? group by u.id,u.login,u.avatar,r.role";
+
   const [data] = await db.query(q, [userId]);
   return data[0];
 };
@@ -52,7 +54,7 @@ const changeAvatar = async (values) => {
 const getUserByLogin = async (values) => {
   // const q = "select * from users where login=?";
   const q =
-    "select u.id,u.login,u.pass,u.token,r.role from users u left join users_roles ur on u.id=ur.users_id left join roles r on r.id=ur.roles_id where u.login=?";
+    "select u.id,u.login,u.pass,u.avatar,u.token,r.role from users u left join users_roles ur on u.id=ur.users_id left join roles r on r.id=ur.roles_id where u.login=?";
   const [data] = await db.query(q, values[0]);
   return data[0];
 };

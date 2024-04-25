@@ -67,12 +67,18 @@ const deleteUserController = async (req, res) => {
 const updateUserController = async (req, res) => {
   if (!validateUpdate(req))
     return res.status(403).json("All fields are required");
-  const hashedPwd = await bcrypt.hash(req.body.pass, 10);
+  const hashedPwd = await bcrypt.hash(req.body.newPass, 10);
   // let filePath = req?.file
   //   ? getFilePath(req.file.originalname, FILE_PATH)
   //   : null;
   const values = [req.body.login, hashedPwd, req.params.id];
   try {
+    const user = await getUserById(req.params.id);
+    if (!user) return res.status(404).json({ message: "No such user" });
+    const match = await bcrypt.compare(req.body.pass, user.pass);
+    if (!match)
+      return res.status(404).json({ message: "Incorrect user or password." });
+
     await modifyUser(values);
     // if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
     return res.status(201).json("The user has been modified");
@@ -138,7 +144,9 @@ const authController = async (req, res) => {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
-    return res.status(200).json({ accessToken });
+    const { pass, token, ...user } = result;
+
+    return res.status(200).json({ accessToken, user });
   } catch (err) {
     console.log(err);
     return res.status(409).json("Something went wrong.");
