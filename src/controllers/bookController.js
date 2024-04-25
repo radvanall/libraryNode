@@ -6,9 +6,11 @@ const {
   updateBook,
   deleteBook,
 } = require("../model/book");
+
 const deleteImage = require("../utils/deleteImage");
 const getFilePath = require("../utils/getFilePath");
 const validateGetAllBooks = require("../utils/validateGetAllBooks");
+const getGenres = require("../utils/getGenres");
 const fs = require("fs");
 const path = require("path");
 const FILE_PATH = path.join(__dirname, "..", "..", "images", "books");
@@ -39,13 +41,19 @@ const createBookController = async (req, res) => {
   const valid = validateCreateBook(req);
   if (!valid)
     return res.status(401).json({ message: "All fields are required" });
+  const genresArray = getGenres(req.body.genres);
+  if (!genresArray)
+    return res.status(404).json({ message: "Problem with genres." });
+  console.log(genresArray);
+
   let filePath = req?.file
     ? getFilePath(req.file.originalname, FILE_PATH)
     : null;
 
-  const values = [req.body.title, req.body.desc, filePath, req.body.author];
+  const bookValues = [req.body.title, req.body.desc, filePath, req.body.author];
+
   try {
-    await createBook(values);
+    await createBook(bookValues, genresArray);
     if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
     return res.status(201).json("The book has been created");
   } catch (err) {

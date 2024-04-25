@@ -20,10 +20,18 @@ const getBookById = async (bookId) => {
   const [data] = await db.query(q, [bookId]);
   return data[0];
 };
-const createBook = async (values) => {
+const createBook = async (values, genres) => {
   const q =
     "insert into books(`title`,`description`,`cover`,`author`) values(?)";
-  await db.query(q, [values]);
+  const [res] = await db.query(q, [values]);
+  const insertId = res.insertId;
+  let q2 = "insert into books_genres(book_id,genre_id) values";
+  genres.forEach((genre) => {
+    const pair = `(${insertId},${genre}),`;
+    q2 += pair;
+  });
+  q2 = q2.slice(0, q2.length - 1);
+  await db.query(q2);
 };
 const updateBook = async (values) => {
   const q =
