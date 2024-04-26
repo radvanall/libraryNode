@@ -9,8 +9,8 @@ const multipartMulter = require("../middleware/multipartMulter");
 router
   .route("/")
   .get(
-    verifyJWT,
-    verifyRoles(ROLES_LIST.Admin),
+    // verifyJWT,
+    // verifyRoles(ROLES_LIST.Admin),
     userController.getUsersController
   )
   .post(
@@ -25,6 +25,7 @@ router
     userController.changeAvatarController,
     multerErrorHandler
   );
+router.route("/change-role").put(userController.changeRoleController);
 router.route("/auth").get(userController.authController);
 router.route("/refresh").get(userController.handleRefreshToken);
 router.route("/logout").get(userController.handleLogout);

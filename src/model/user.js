@@ -12,6 +12,14 @@ const getUserById = async (userId) => {
   const [data] = await db.query(q, [userId]);
   return data[0];
 };
+const getUserRoleById = async (userId) => {
+  const q =
+    "select r.role from users_roles ur left join roles r on r.id=ur.roles_id where ur.users_id=?";
+
+  const [data] = await db.query(q, [userId]);
+  console.log(data[0].role == 2001);
+  return data[0];
+};
 const createUser = async (values) => {
   const q = "insert into users(`login`,`pass`,`avatar`) values(?)";
   const q2 = "SELECT * FROM users where login=?";
@@ -46,6 +54,12 @@ const modifyUser = async (values) => {
   }
   await db.query(q, values);
 };
+const changeRole = async (values) => {
+  const q = "delete from users_roles where users_id=?";
+  await db.query(q, values[0]);
+  const q2 = "insert into users_roles(`users_id`,`roles_id`) values(?,?)";
+  await db.query(q2, values);
+};
 const changeAvatar = async (values) => {
   console.log("values=", values);
   const q = "update users set `avatar`=? where id=?";
@@ -79,4 +93,6 @@ module.exports = {
   setToken,
   getUserByToken,
   changeAvatar,
+  getUserRoleById,
+  changeRole,
 };

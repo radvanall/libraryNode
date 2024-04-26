@@ -18,6 +18,7 @@ router
     bookController.changeCoverController,
     multerErrorHandler
   );
+router.route("/change-genres/:id").put(bookController.changeGenresController);
 router
   .route("/:id")
   .get(bookController.getBookByIdController)

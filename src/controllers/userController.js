@@ -8,6 +8,7 @@ const {
   setToken,
   changeAvatar,
   getUserByToken,
+  changeRole,
 } = require("../model/user");
 const deleteImage = require("../utils/deleteImage");
 const validateUpdate = require("../utils/validateUpdateUser");
@@ -30,6 +31,7 @@ const getUsersController = async (req, res) => {
 const getUserByIdController = async (req, res) => {
   try {
     const data = await getUserById(req.params.id);
+
     return res.status(200).json(data);
   } catch (err) {
     return res.status(500).json(err.message);
@@ -55,6 +57,8 @@ const createUserController = async (req, res) => {
 const deleteUserController = async (req, res) => {
   try {
     const user = await getUserById(req.params.id);
+    if (user.role === 5150)
+      return res.status(401).json({ message: "you can't delete this user" });
     await deleteUser(req.params.id);
     deleteImage(user.avatar);
     return res.status(201).json("The user has been deleted successfully");
@@ -115,6 +119,22 @@ const changeAvatarController = async (req, res) => {
     return res.status(202).json({ message: "The avatar has been changed." });
   } catch (err) {
     return res.status(400).json({ err: err.message });
+  }
+};
+const changeRoleController = async (req, res) => {
+  if (!req?.body?.id || !req?.body?.roleId)
+    return res.staus(404).json({ message: "Wrong input" });
+
+  if (req.body.id === 1)
+    return res
+      .status(401)
+      .json({ message: "you can't change  this user's role!" });
+  const values = [req.body.id, req.body.roleId];
+  try {
+    await changeRole(values);
+    return res.status(200).json({ message: "The role has been changed" });
+  } catch (err) {
+    return res.status(500).json({ message: "Error on server" });
   }
 };
 const authController = async (req, res) => {
@@ -200,4 +220,5 @@ module.exports = {
   changeAvatarController,
   handleRefreshToken,
   handleLogout,
+  changeRoleController,
 };
