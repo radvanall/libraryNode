@@ -8,6 +8,7 @@ app.use(cookieParser());
 app.use("/books", require("./routes/bookRoutes"));
 app.use("/users", require("./routes/userRoutes"));
 app.use("/comments", require("./routes/commentRoutes"));
+app.use("/genres", require("./routes/genreRoutes"));
 
 app.all("*", (req, res) => {
   return res.status(404).json({ error: "404 Not Found" });
