@@ -5,6 +5,7 @@ const {
   changeCover,
   updateBook,
   deleteBook,
+  changeGenres,
 } = require("../model/book");
 
 const deleteImage = require("../utils/deleteImage");
@@ -97,6 +98,21 @@ const changeCoverController = async (req, res) => {
     return res.status(400).json({ err: err.message });
   }
 };
+const changeGenresController = async (req, res) => {
+  if (!req?.body?.genres || !Array.isArray(req.body.genres) || !req?.params?.id)
+    return res.status(404).json({ message: "the imput is not valid" });
+  const genresArray = req.body.genres;
+  for (let genre of genresArray) {
+    if (typeof genre !== "number")
+      return res.status(404).json({ message: "the imput is not valid 2" });
+  }
+  try {
+    await changeGenres(genresArray, req.params.id);
+    return res.status(200).json({ message: "The genres have been changed" });
+  } catch (err) {
+    return res.status(400).json({ err: err.message });
+  }
+};
 const deleteBookController = async (req, res) => {
   try {
     const book = await getBookById(req.params.id);
@@ -114,4 +130,5 @@ module.exports = {
   updateBookController,
   deleteBookController,
   changeCoverController,
+  changeGenresController,
 };

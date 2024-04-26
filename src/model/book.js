@@ -42,6 +42,32 @@ const changeCover = async (values) => {
   const q = "update books set `cover`=? where id=?";
   await db.query(q, values);
 };
+const changeGenres = async (values, bookId) => {
+  const q = "select genre_id,id from books_genres where book_id=?";
+  const [res] = await db.query(q, bookId);
+  const toBeDeleted = [];
+  res.forEach((value) => {
+    if (!values.includes(value.genre_id)) toBeDeleted.push(value.id);
+  });
+  const currentGenres = res.map((item) => item.genre_id);
+  const toBeAdded = [];
+  values.forEach((genre) => {
+    if (!currentGenres.includes(genre)) toBeAdded.push(genre);
+  });
+  if (toBeDeleted.length > 0) {
+    const placeholders = toBeDeleted.map(() => "?").join(", ");
+    const q2 = `delete from books_genres where id IN (${placeholders})`;
+    await db.query(q2, toBeDeleted);
+  }
+  if (toBeAdded.length > 0) {
+    const placeholders = toBeAdded
+      .map((genre) => `(${bookId},${genre})`)
+      .join(",");
+    const q2 =
+      `insert into books_genres(book_id,genre_id) values` + placeholders;
+    await db.query(q2, toBeDeleted);
+  }
+};
 const deleteBook = async (bookId) => {
   const q = "delete from books  where id=?";
   const q2 = "update comments set book_id=null where book_id=?";
@@ -58,4 +84,5 @@ module.exports = {
   updateBook,
   deleteBook,
   changeCover,
+  changeGenres,
 };
