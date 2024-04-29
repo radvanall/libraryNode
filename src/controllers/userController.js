@@ -20,123 +20,92 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const FILE_PATH = path.join(__dirname, "..", "..", "images", "users");
 const getFilePath = require("../utils/getFilePath");
-const getUsersController = async (req, res) => {
-  try {
-    const data = await getAllUsers();
-    return res.status(200).json(data);
-  } catch (err) {
-    return res.status(500).json(err.message);
-  }
-};
-const getUserByIdController = async (req, res) => {
-  try {
-    const data = await getUserById(req.params.id);
+const asyncErrorHandler = require("../utils/asyncErrorHandler");
+const CustomError = require("../utils/CustomError");
 
-    return res.status(200).json(data);
-  } catch (err) {
-    return res.status(500).json(err.message);
+const getUsersController = asyncErrorHandler(async (req, res, next) => {
+  const data = await getAllUsers();
+  return res.status(200).json(data);
+});
+
+const getUserByIdController = asyncErrorHandler(async (req, res, next) => {
+  const data = await getUserById(req.params.id);
+  return res.status(200).json(data);
+});
+
+const createUserController = asyncErrorHandler(async (req, res, next) => {
+  if (!validateCreate(req)) {
+    const error = new CustomError("All fields are required", 404);
+    return next(error);
   }
-};
-const createUserController = async (req, res) => {
-  if (!validateCreate(req))
-    return res.status(403).json("All fields are required");
   const hashedPwd = await bcrypt.hash(req.body.pass, 10);
   let filePath = req?.file
     ? getFilePath(req.file.originalname, FILE_PATH)
     : null;
   const values = [req.body.login, hashedPwd, filePath];
-  try {
-    await createUser(values);
-    if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
-    return res.json("The user has been created");
-  } catch (err) {
-    if (err.name === "taken") return res.status(409).json(err.message);
-    return res.status(500).json(err.message);
+  await createUser(values);
+  if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
+  return res.json("The user has been created");
+});
+
+const deleteUserController = asyncErrorHandler(async (req, res, next) => {
+  const user = await getUserById(req.params.id);
+  if (user.role === 5150) {
+    const error = new CustomError("you can't delete this user", 401);
+    return next(error);
   }
-};
-const deleteUserController = async (req, res) => {
-  try {
-    const user = await getUserById(req.params.id);
-    if (user.role === 5150)
-      return res.status(401).json({ message: "you can't delete this user" });
-    await deleteUser(req.params.id);
-    deleteImage(user.avatar);
-    return res.status(201).json("The user has been deleted successfully");
-  } catch (err) {
-    if (err.hasOwnProperty("errno"))
-      return res.status(500).json("Error on the server");
-    return res.status(500).json(err.message);
+  await deleteUser(req.params.id);
+  deleteImage(user.avatar);
+  return res.status(201).json("The user has been deleted successfully");
+});
+
+const updateUserController = asyncErrorHandler(async (req, res, next) => {
+  if (!validateUpdate(req)) {
+    const error = new CustomError("All fields are required", 403);
+    return next(error);
   }
-};
-const updateUserController = async (req, res) => {
-  if (!validateUpdate(req))
-    return res.status(403).json("All fields are required");
   const hashedPwd = await bcrypt.hash(req.body.newPass, 10);
-  // let filePath = req?.file
-  //   ? getFilePath(req.file.originalname, FILE_PATH)
-  //   : null;
   const values = [req.body.login, hashedPwd, req.params.id];
-  try {
-    const user = await getUserById(req.params.id);
-    if (!user) return res.status(404).json({ message: "No such user" });
-    const match = await bcrypt.compare(req.body.pass, user.pass);
-    if (!match)
-      return res.status(404).json({ message: "Incorrect user or password." });
-
-    await modifyUser(values);
-    // if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
-    return res.status(201).json("The user has been modified");
-  } catch (err) {
-    if (err.name === "taken") return res.status(409).json(err.message);
-    if (err.hasOwnProperty("errno"))
-      return res.status(500).json("Error on the server");
-    return res.status(500).json(err.message);
+  const user = await getUserById(req.params.id);
+  if (!user) {
+    const error = new CustomError("No such user", 403);
+    return next(error);
   }
-};
-const changeAvatarController = async (req, res) => {
-  console.log(req.file);
-  console.log(req.params.id);
-  try {
-    const user = await getUserById(req.params.id);
-
-    // if (user.avatar !== null) {
-    //   if (fs.existsSync(user.avatar)) {
-    //     console.log("File exists at", user.avatar);
-    //     fs.unlinkSync(user.avatar);
-    //   }
-    // }
-    let filePath = req?.file
-      ? getFilePath(req.file.originalname, FILE_PATH)
-      : null;
-    const values = [filePath, req.params.id];
-    console.log("values i=", values);
-    await changeAvatar(values);
-    deleteImage(user.avatar);
-    if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
-
-    console.log(user.avatar);
-    console.log(user.avatar === null);
-    return res.status(202).json({ message: "The avatar has been changed." });
-  } catch (err) {
-    return res.status(400).json({ err: err.message });
+  const match = await bcrypt.compare(req.body.pass, user.pass);
+  if (!match) {
+    const error = new CustomError("Incorrect user or password.", 404);
+    return next(error);
   }
-};
-const changeRoleController = async (req, res) => {
-  if (!req?.body?.id || !req?.body?.roleId)
-    return res.staus(404).json({ message: "Wrong input" });
+  await modifyUser(values);
+  return res.status(201).json("The user has been modified");
+});
 
-  if (req.body.id === 1)
-    return res
-      .status(401)
-      .json({ message: "you can't change  this user's role!" });
+const changeAvatarController = asyncErrorHandler(async (req, res, next) => {
+  const user = await getUserById(req.params.id);
+  let filePath = req?.file
+    ? getFilePath(req.file.originalname, FILE_PATH)
+    : null;
+  const values = [filePath, req.params.id];
+  await changeAvatar(values);
+  deleteImage(user.avatar);
+  if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
+  return res.status(202).json({ message: "The avatar has been changed." });
+});
+
+const changeRoleController = asyncErrorHandler(async (req, res, next) => {
+  if (!req?.body?.id || !req?.body?.roleId) {
+    const error = new CustomError("Wrong input", 401);
+    return next(error);
+  }
+  if (req.body.id === 1) {
+    const error = new CustomError("you can't change  this user's role!", 401);
+    return next(error);
+  }
   const values = [req.body.id, req.body.roleId];
-  try {
-    await changeRole(values);
-    return res.status(200).json({ message: "The role has been changed" });
-  } catch (err) {
-    return res.status(500).json({ message: "Error on server" });
-  }
-};
+  await changeRole(values);
+  return res.status(200).json({ message: "The role has been changed" });
+});
+
 const authController = async (req, res) => {
   if (!validateCreate(req))
     return res.status(403).json("All fields are required");
@@ -196,6 +165,7 @@ const handleRefreshToken = async (req, res) => {
     if (err) return res.sendStatus(403);
   }
 };
+
 const handleLogout = async (req, res) => {
   const cookies = req.cookies;
   if (!cookies?.jwt) return res.sendStatus(204);
@@ -210,6 +180,7 @@ const handleLogout = async (req, res) => {
   res.clearCookie("jwt", { httpOnly: true });
   return res.sendStatus(204);
 };
+
 module.exports = {
   getUsersController,
   getUserByIdController,

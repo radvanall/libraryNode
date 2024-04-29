@@ -16,29 +16,29 @@ const fs = require("fs");
 const path = require("path");
 const FILE_PATH = path.join(__dirname, "..", "..", "images", "books");
 const validateCreateBook = require("../utils/validateCreateBook");
-const getAllBooksController = async (req, res) => {
-  if (!validateGetAllBooks(req))
-    return res.status(404).json({ message: "No such page." });
-  try {
-    const data = await getAllBooks(
-      parseInt(req.query.page),
-      parseInt(req.query.limit)
-    );
+const asyncErrorHandler = require("../utils/asyncErrorHandler");
+const CustomError = require("../utils/CustomError");
 
-    return res.status(200).json(data);
-  } catch (err) {
-    return res.status(500).json(err.message);
+const getAllBooksController = asyncErrorHandler(async (req, res, next) => {
+  console.log(process.env.NODE_ENV);
+  if (!validateGetAllBooks(req)) {
+    const error = new CustomError("No such page.", 404);
+    return next(error);
   }
-};
-const getBookByIdController = async (req, res) => {
-  try {
-    const data = await getBookById(req.params.id);
-    return res.json(data);
-  } catch (err) {
-    return res.status(500).json(err.message);
-  }
-};
-const createBookController = async (req, res) => {
+  const data = await getAllBooks(
+    parseInt(req.query.page),
+    parseInt(req.query.limit)
+  );
+
+  return res.status(200).json(data);
+});
+
+const getBookByIdController = asyncErrorHandler(async (req, res, next) => {
+  const data = await getBookById(req.params.id);
+  return res.json(data);
+});
+
+const createBookController = asyncErrorHandler(async (req, res, next) => {
   const valid = validateCreateBook(req);
   if (!valid)
     return res.status(401).json({ message: "All fields are required" });
@@ -52,17 +52,12 @@ const createBookController = async (req, res) => {
     : null;
 
   const bookValues = [req.body.title, req.body.desc, filePath, req.body.author];
+  await createBook(bookValues, genresArray);
+  if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
+  return res.status(201).json("The book has been created");
+});
 
-  try {
-    await createBook(bookValues, genresArray);
-    if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
-    return res.status(201).json("The book has been created");
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json(err.message);
-  }
-};
-const updateBookController = async (req, res) => {
+const updateBookController = asyncErrorHandler(async (req, res, next) => {
   const valid = validateCreateBook(req);
   if (!valid)
     return res.status(401).json({ message: "All fields are required" });
@@ -72,33 +67,25 @@ const updateBookController = async (req, res) => {
     req.body.author,
     req.params.id,
   ];
-  try {
-    await updateBook(values);
-    return res.status(201).json("The book has been modified successfully");
-  } catch (err) {
-    console.log("error=", err);
-    return res.status(500).json(err.message);
-  }
-};
-const changeCoverController = async (req, res) => {
-  try {
-    const book = await getBookById(req.params.id);
-    deleteImage(book.cover);
-    let filePath = req?.file
-      ? getFilePath(req.file.originalname, FILE_PATH)
-      : null;
-    const values = [filePath, req.params.id];
-    console.log("values i=", values);
-    await changeCover(values);
-    if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
-    return res
-      .status(200)
-      .json({ message: "The book cover has been changed." });
-  } catch (err) {
-    return res.status(400).json({ err: err.message });
-  }
-};
-const changeGenresController = async (req, res) => {
+
+  await updateBook(values);
+  return res.status(201).json("The book has been modified successfully");
+});
+
+const changeCoverController = asyncErrorHandler(async (req, res, next) => {
+  const book = await getBookById(req.params.id);
+  deleteImage(book.cover);
+  let filePath = req?.file
+    ? getFilePath(req.file.originalname, FILE_PATH)
+    : null;
+  const values = [filePath, req.params.id];
+  console.log("values i=", values);
+  await changeCover(values);
+  if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
+  return res.status(200).json({ message: "The book cover has been changed." });
+});
+
+const changeGenresController = asyncErrorHandler(async (req, res, next) => {
   if (!req?.body?.genres || !Array.isArray(req.body.genres) || !req?.params?.id)
     return res.status(404).json({ message: "the imput is not valid" });
   const genresArray = req.body.genres;
@@ -106,23 +93,17 @@ const changeGenresController = async (req, res) => {
     if (typeof genre !== "number")
       return res.status(404).json({ message: "the imput is not valid 2" });
   }
-  try {
-    await changeGenres(genresArray, req.params.id);
-    return res.status(200).json({ message: "The genres have been changed" });
-  } catch (err) {
-    return res.status(400).json({ err: err.message });
-  }
-};
-const deleteBookController = async (req, res) => {
-  try {
-    const book = await getBookById(req.params.id);
-    await deleteBook(req.params.id);
-    deleteImage(book.cover);
-    return res.status(201).json("Book has been deleted successfully");
-  } catch (err) {
-    return res.status(500).json(err.message);
-  }
-};
+
+  await changeGenres(genresArray, req.params.id);
+  return res.status(200).json({ message: "The genres have been changed" });
+});
+
+const deleteBookController = asyncErrorHandler(async (req, res, next) => {
+  const book = await getBookById(req.params.id);
+  await deleteBook(req.params.id);
+  deleteImage(book.cover);
+  return res.status(201).json("Book has been deleted successfully");
+});
 module.exports = {
   getAllBooksController,
   getBookByIdController,

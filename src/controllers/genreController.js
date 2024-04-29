@@ -5,65 +5,48 @@ const {
   updateGenre,
   deleteGenre,
 } = require("../model/genre");
+const asyncErrorHandler = require("../utils/asyncErrorHandler");
+const CustomError = require("../utils/CustomError");
 
-const getAllGenresController = async (req, res) => {
-  try {
-    const data = await getAllGenres();
-    return res.status(200).json(data);
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Error on the server", err: err.message });
-  }
-};
-const getAllGenresAndNrOfBooksController = async (req, res) => {
-  try {
+const getAllGenresController = asyncErrorHandler(async (req, res, next) => {
+  const data = await getAllGenres();
+  return res.status(200).json(data);
+});
+
+const getAllGenresAndNrOfBooksController = asyncErrorHandler(
+  async (req, res, next) => {
     const data = await getAllGenresAndNrOfBooks();
     return res.status(200).json(data);
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Error on the server", err: err.message });
   }
-};
-const createGenreController = async (req, res) => {
-  if (!req?.body?.genre)
-    return res.status(404).json({ message: "No genre send" });
-  try {
-    await createGenre(req.body.genre);
-    return res.status(202).json({ message: "The genre has been created" });
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Error on the server", err: err.message });
-  }
-};
-const updateGenreController = async (req, res) => {
-  if (!req?.body?.genre || !req?.params?.id)
-    return res.status(404).json({ message: "The input is wrong" });
-  const values = [req.body.genre, req.params.id];
-  try {
-    await updateGenre(values);
-    return res.status(202).json({ message: "The genre has been updated" });
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Error on the server", err: err.message });
-  }
-};
-const deleteGenreController = async (req, res) => {
-  if (!req?.params?.id)
-    return res.status(404).json({ message: "The input is wrong" });
+);
 
-  try {
-    await deleteGenre(req.params.id);
-    return res.status(202).json({ message: "The genre has been removed" });
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Error on the server", err: err.message });
+const createGenreController = asyncErrorHandler(async (req, res, next) => {
+  if (!req?.body?.genre) {
+    const error = new CustomError("No genre send", 404);
+    return next(error);
   }
-};
+  await createGenre(req.body.genre);
+  return res.status(202).json({ message: "The genre has been created" });
+});
+
+const updateGenreController = asyncErrorHandler(async (req, res, next) => {
+  if (!req?.body?.genre || !req?.params?.id) {
+    const error = new CustomError("The input is wrong", 404);
+    return next(error);
+  }
+  const values = [req.body.genre, req.params.id];
+  await updateGenre(values);
+  return res.status(202).json({ message: "The genre has been updated" });
+});
+
+const deleteGenreController = asyncErrorHandler(async (req, res, next) => {
+  if (!req?.params?.id) {
+    const error = new CustomError("The input is wrong", 404);
+    return next(error);
+  }
+  await deleteGenre(req.params.id);
+  return res.status(202).json({ message: "The genre has been removed" });
+});
 module.exports = {
   getAllGenresController,
   getAllGenresAndNrOfBooksController,
