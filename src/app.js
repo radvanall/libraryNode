@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
+const CustomError = require("./utils/CustomError");
+const globalErrorHandler = require("./controllers/errorController");
 
 require("dotenv").config();
 app.use(express.json());
@@ -10,16 +12,12 @@ app.use("/users", require("./routes/userRoutes"));
 app.use("/comments", require("./routes/commentRoutes"));
 app.use("/genres", require("./routes/genreRoutes"));
 
-app.all("*", (req, res) => {
-  return res.status(404).json({ error: "404 Not Found" });
+app.all("*", (req, res, next) => {
+  const err = new CustomError(
+    `Cant find ${req.originalUrl} on the server !`,
+    404
+  );
+  next(err);
 });
-app.use((error, req, res, next) => {
-  console.log("error");
-  error.statusCode = error.statusCode || 500;
-  error.status = error.status || "error";
-  res.status(error.statusCode).json({
-    status: error.statusCode,
-    message: error.message,
-  });
-});
+app.use(globalErrorHandler);
 module.exports = app;
