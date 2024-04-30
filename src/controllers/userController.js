@@ -106,67 +106,76 @@ const changeRoleController = asyncErrorHandler(async (req, res, next) => {
   return res.status(200).json({ message: "The role has been changed" });
 });
 
-const authController = async (req, res) => {
-  if (!validateCreate(req))
-    return res.status(403).json("All fields are required");
-  const values = [req.body.login, req.body.pass];
-  try {
-    const result = await getUserByLogin(values);
-    console.log(result.role);
-    if (!result) return res.status(403).json("Password or nickname are wrong.");
-    const match = await bcrypt.compare(req.body.pass, result.pass);
-    if (!match) return res.status(403).json("Password or nickname are wrong.");
-    const userData = { username: result.login };
-    const refreshToken = createToken(
-      userData,
-      process.env.REFRESH_TOKEN_SECRET,
-      "1d"
-    );
-    userData.roles = result.role;
-    const accessToken = createToken(
-      userData,
-      process.env.ACCESS_TOKEN_SECRET,
-      "1m"
-    );
-    await setToken([refreshToken, result.id]);
-    res.cookie("jwt", refreshToken, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-    const { pass, token, ...user } = result;
-
-    return res.status(200).json({ accessToken, user });
-  } catch (err) {
-    console.log(err);
-    return res.status(409).json("Something went wrong.");
+const authController = asyncErrorHandler(async (req, res, next) => {
+  if (!validateCreate(req)) {
+    const error = new CustomError("All fields are required", 403);
+    return next(error);
   }
-};
+  const values = [req.body.login, req.body.pass];
 
-const handleRefreshToken = async (req, res) => {
+  const result = await getUserByLogin(values);
+  console.log(result.role);
+  if (!result) {
+    const error = new CustomError("Password or nickname are wrong.", 403);
+    return next(error);
+  }
+  const match = await bcrypt.compare(req.body.pass, result.pass);
+  if (!match) {
+    const error = new CustomError("Password or nickname are wrong.", 403);
+    return next(error);
+  }
+  const userData = { username: result.login };
+  const refreshToken = createToken(
+    userData,
+    process.env.REFRESH_TOKEN_SECRET,
+    "1d"
+  );
+  userData.roles = result.role;
+  const accessToken = createToken(
+    userData,
+    process.env.ACCESS_TOKEN_SECRET,
+    "1m"
+  );
+  await setToken([refreshToken, result.id]);
+  res.cookie("jwt", refreshToken, {
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+  const { pass, token, ...user } = result;
+
+  return res.status(200).json({ accessToken, user });
+});
+
+const handleRefreshToken = asyncErrorHandler(async (req, res, next) => {
   const cookies = req.cookies;
   console.log("cookies=", cookies);
-  if (!cookies?.jwt) return res.sendStatus(401);
+  if (!cookies?.jwt) {
+    const error = new CustomError("Access denied", 401);
+    return next(error);
+  }
   const refreshToken = cookies.jwt;
   const foundUser = await getUserByToken(refreshToken);
   console.log("foundUser=", foundUser);
-  if (!foundUser) return res.sendStatus(403);
-  try {
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    if (decoded.username !== foundUser.login) return res.sendStatus(403);
-    console.log(decoded);
-    const userData = { username: decoded.username, roles: foundUser.role };
-    const accessToken = createToken(
-      userData,
-      process.env.ACCESS_TOKEN_SECRET,
-      "1m"
-    );
-    res.json({ accessToken });
-  } catch (err) {
-    if (err) return res.sendStatus(403);
+  if (!foundUser) {
+    const error = new CustomError("Access denied", 403);
+    return next(error);
   }
-};
+  const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  if (decoded.username !== foundUser.login) {
+    const error = new CustomError("Access denied", 403);
+    return next(error);
+  }
+  console.log(decoded);
+  const userData = { username: decoded.username, roles: foundUser.role };
+  const accessToken = createToken(
+    userData,
+    process.env.ACCESS_TOKEN_SECRET,
+    "1m"
+  );
+  res.json({ accessToken });
+});
 
-const handleLogout = async (req, res) => {
+const handleLogout = asyncErrorHandler(async (req, res, next) => {
   const cookies = req.cookies;
   if (!cookies?.jwt) return res.sendStatus(204);
   const refreshToken = cookies.jwt;
@@ -179,7 +188,7 @@ const handleLogout = async (req, res) => {
   await setToken([null, foundUser.id]);
   res.clearCookie("jwt", { httpOnly: true });
   return res.sendStatus(204);
-};
+});
 
 module.exports = {
   getUsersController,

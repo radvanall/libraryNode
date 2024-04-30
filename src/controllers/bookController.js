@@ -46,11 +46,11 @@ const createBookController = asyncErrorHandler(async (req, res, next) => {
   if (!genresArray)
     return res.status(404).json({ message: "Problem with genres." });
   console.log(genresArray);
-
+  console.log("file=", req.file);
   let filePath = req?.file
     ? getFilePath(req.file.originalname, FILE_PATH)
     : null;
-
+  console.log("filePath", filePath);
   const bookValues = [req.body.title, req.body.desc, filePath, req.body.author];
   await createBook(bookValues, genresArray);
   if (req?.file) fs.writeFileSync(filePath, req.file.buffer);
@@ -100,6 +100,7 @@ const changeGenresController = asyncErrorHandler(async (req, res, next) => {
 
 const deleteBookController = asyncErrorHandler(async (req, res, next) => {
   const book = await getBookById(req.params.id);
+  if (!book) return res.status(201).json("Book doesn't exist.");
   await deleteBook(req.params.id);
   deleteImage(book.cover);
   return res.status(201).json("Book has been deleted successfully");
