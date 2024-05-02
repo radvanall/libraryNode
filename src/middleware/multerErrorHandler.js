@@ -11,6 +11,7 @@ const multerErrorHandler = function (err, req, res, next) {
     if (err.code === "LIMIT_FIELD_KEY")
       return res.status(400).send({ error: err.message });
   }
-  res.status(400).end();
+  next(err);
+  // res.status(400).end();
 };
 module.exports = multerErrorHandler;

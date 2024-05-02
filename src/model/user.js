@@ -7,9 +7,8 @@ const getAllUsers = async () => {
 const getUserById = async (userId) => {
   console.log("getid=", userId);
   const q =
-    "select u.id,u.login,u.avatar,r.role,count(c.comment) as totalComments from users u left join users_roles ur on u.id=ur.users_id left join roles r on r.id=ur.roles_id left join comments c on c.user_id=u.id where u.id=? group by u.id,u.login,u.avatar,r.role";
-
-  const [data] = await db.query(q, [userId]);
+    "select u.id,u.login,u.avatar,u.pass,r.role,count(c.comment) as totalComments from users u left join users_roles ur on u.id=ur.users_id left join roles r on r.id=ur.roles_id left join comments c on c.user_id=u.id where u.id=? group by u.id,u.login,u.avatar,r.role";
+  const [data] = await db.query(q, userId);
   return data[0];
 };
 const getUserRoleById = async (userId) => {
