@@ -1,4 +1,3 @@
-const request = require("supertest");
 const validate = require("../../src/utils/validateUpdateUser");
 const req = {
   body: {

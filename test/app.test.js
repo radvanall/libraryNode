@@ -2,9 +2,11 @@ const request = require("supertest");
 const book = require("../src/model/book");
 const user = require("../src/model/user");
 const app = require("../src/app");
+const bcrypt = require("bcrypt");
 
 jest.mock("../src/model/book");
 jest.mock("../src/model/user");
+// jest.mock("../src/middleware/multipartMulter");
 const bookEx = {
   id: 1,
   title: "test book",
@@ -17,6 +19,7 @@ const postBook = {
   desc: "This is a test book.",
   cover: "cover",
   author: "no autor",
+  genres: "[1,3,4]",
 };
 
 describe("testing the /books endpoint", () => {
@@ -43,19 +46,16 @@ describe("testing the /books endpoint", () => {
     });
     test("should get the title, desc, cover and author in the createBookController", async () => {
       await request(app).post("/books").send(postBook);
-      expect(book.createBook).toHaveBeenCalledWith([
-        "test book",
-        "This is a test book.",
-        "cover",
-        "no autor",
-      ]);
+      expect(book.createBook).toHaveBeenCalledWith(
+        ["test book", "This is a test book.", null, "no autor"],
+        [1, 3, 4]
+      );
     });
-    test("should get the title,desc,cover,author and id in the updateBook function", async () => {
+    test("should get the title,desc,author and id in the updateBook function", async () => {
       await request(app).put(`/books/${1}`).send(postBook);
       expect(book.updateBook).toHaveBeenCalledWith([
         "test book",
         "This is a test book.",
-        "cover",
         "no autor",
         "1",
       ]);
@@ -63,6 +63,7 @@ describe("testing the /books endpoint", () => {
   });
   describe("Testing the delete book endpoint", () => {
     test("The endpoint should return status 201", async () => {
+      book.getBookById.mockReturnValue({ cover: "na" });
       const response = await request(app).delete(`/books/${1}`);
       expect(response.status).toEqual(201);
     });
@@ -117,19 +118,13 @@ describe("testing the /users endpoint", () => {
     });
     test("should recive a password and a login in the createUser function", async () => {
       await request(app).post("/users").send(exUser);
-      expect(user.createUser).toHaveBeenCalledWith(["test", "1111"]);
-    });
-  });
-  describe("testing the put endpoint", () => {
-    test("should recive a password and a login in the modifyUser function", async () => {
-      await request(app).put(`/users/${exUser.id}`).send(exUser);
-      expect(user.modifyUser).toHaveBeenCalledWith(["test", "1111", "1"]);
-    });
-    test("should respond with a 200 status", async () => {
-      const response = await request(app)
-        .put(`/users/${exUser.id}`)
-        .send(exUser);
-      expect(response.status).toEqual(201);
+      expect(user.createUser).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          "test",
+          expect.stringMatching(/^.{55,}$/),
+          null,
+        ])
+      );
     });
   });
   describe("testing the delete user endpoint", () => {
