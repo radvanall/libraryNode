@@ -3,8 +3,11 @@ const app = express();
 const cookieParser = require("cookie-parser");
 const CustomError = require("./utils/CustomError");
 const globalErrorHandler = require("./controllers/errorController");
+const cors = require("cors");
+const corsOptions = require("../config/corsOptions");
 
 require("dotenv").config();
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 app.use("/books", require("./routes/bookRoutes"));
