@@ -2,14 +2,22 @@ const db = require("../../config/dbConfig");
 const getRowCount = require("../utils/getRowCount");
 const createPaginatedResult = require("../utils/createPaginatedResult");
 const setGeneres = require("../utils/setGenres");
-const getAllBooks = async (page, limit) => {
-  const q =
-    "SELECT b.id, b.title, b.author,b.cover," +
-    "GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b " +
-    "LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id  LIMIT ? OFFSET ?";
+const getAllBooks = async (page, limit, ignoredGenres) => {
+  let q = `SELECT * FROM ( SELECT b.id, b.title, b.author,b.cover,
+  GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b 
+  LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id) AS sq
+  HAVING id in (SELECT bg.book_id FROM  books_genres bg LEFT JOIN genres g on bg.genre_id=g.id`;
+  console.log("isArray=", Array.isArray(ignoredGenres));
+  if (Array.isArray(ignoredGenres) && ignoredGenres.length > 0) {
+    console.log("a");
+    const placeholders = ignoredGenres.map(() => "?").join(", ");
+    q += " WHERE g.id NOT IN (" + placeholders + ")";
+  }
+  q += ") LIMIT ? OFFSET ?";
+  console.log(q);
 
   const offset = (page - 1) * limit;
-  const [data] = await db.query(q, [limit, offset]);
+  const [data] = await db.query(q, [...ignoredGenres, limit, offset]);
   setGeneres(data);
   const totalBooks = await getRowCount("books");
   return createPaginatedResult(page, limit, offset, totalBooks, data);
