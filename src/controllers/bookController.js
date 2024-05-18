@@ -6,6 +6,7 @@ const {
   updateBook,
   deleteBook,
   changeGenres,
+  getAllBooksByGenreId,
 } = require("../model/book");
 
 const deleteImage = require("../utils/deleteImage");
@@ -20,14 +21,33 @@ const asyncErrorHandler = require("../utils/asyncErrorHandler");
 const CustomError = require("../utils/CustomError");
 
 const getAllBooksController = asyncErrorHandler(async (req, res, next) => {
-  console.log(process.env.NODE_ENV);
+  // console.log(process.env.NODE_ENV);
   if (!validateGetAllBooks(req)) {
     const error = new CustomError("No such page.", 404);
     return next(error);
   }
+  console.log("requiredGenre=", req.query.requiredGenre);
+  const genreId = req?.query?.requiredGenre;
+  console.log("genreId=", genreId);
+  if (genreId) {
+    const data = await getAllBooksByGenreId(
+      genreId,
+      parseInt(req.query.page),
+      parseInt(req.query.limit)
+    );
+    return res.status(200).json(data);
+  }
+  const genresArray =
+    req.query.ignoredGenres.length > 2
+      ? getGenres(req.query.ignoredGenres)
+      : [];
+  if (!genresArray)
+    return res.status(404).json({ message: "Problem with genres." });
+  console.log("igGen=", req.query.ignoredGenres);
   const data = await getAllBooks(
     parseInt(req.query.page),
-    parseInt(req.query.limit)
+    parseInt(req.query.limit),
+    genresArray
   );
 
   return res.status(200).json(data);
