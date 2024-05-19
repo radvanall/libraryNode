@@ -1,9 +1,11 @@
 const {
   getCommentByBookId,
   getTotalNrOfCommentsByUserId,
+  getTotalNrOfCommentsByBookId,
   getCommentByUserId,
   editComment,
   deleteComment,
+  postComment,
 } = require("../model/comment");
 const asyncErrorHandler = require("../utils/asyncErrorHandler");
 const CustomError = require("../utils/CustomError");
@@ -27,6 +29,18 @@ const getCommentByBookIdController = asyncErrorHandler(
     return res.status(200).json(data);
   }
 );
+const postCommentController = asyncErrorHandler(async (req, res, next) => {
+  if (!req?.body?.comment || !req?.body?.bookId || !req?.body?.userId) {
+    const error = new CustomError(
+      "The user_id,book_id and comment are required",
+      404
+    );
+    return next(error);
+  }
+  const values = [req.body.comment, req.body.bookId, req.body.userId];
+  await postComment(values);
+  return res.status(200).json("The comment has been saved");
+});
 const getNrOfCommentsByUserIdController = asyncErrorHandler(
   async (req, res, next) => {
     if (!req?.params?.id) {
@@ -34,6 +48,16 @@ const getNrOfCommentsByUserIdController = asyncErrorHandler(
       return next(error);
     }
     const nrOfComments = await getTotalNrOfCommentsByUserId(req.params.id);
+    return res.status(200).json(nrOfComments);
+  }
+);
+const getNrOfCommentsByBookIdController = asyncErrorHandler(
+  async (req, res, next) => {
+    if (!req?.params?.id) {
+      const error = new CustomError("The id is required", 404);
+      return next(error);
+    }
+    const nrOfComments = await getTotalNrOfCommentsByBookId(req.params.id);
     return res.status(200).json(nrOfComments);
   }
 );
@@ -80,7 +104,9 @@ const deleteCommentController = asyncErrorHandler(async (req, res, next) => {
 module.exports = {
   getCommentByBookIdController,
   getNrOfCommentsByUserIdController,
+  getNrOfCommentsByBookIdController,
   getCommentByUserIdController,
   editCommentController,
   deleteCommentController,
+  postCommentController,
 };
