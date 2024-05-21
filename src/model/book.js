@@ -1,32 +1,62 @@
 const db = require("../../config/dbConfig");
 const getRowCount = require("../utils/getRowCount");
+const getBookRowCountByGenreId = require("../utils/getBookRowCountByGenreId");
+const getBooksRowCount = require("../utils/getBooksRowCount");
 const createPaginatedResult = require("../utils/createPaginatedResult");
-const setGeneres = require("../utils/setGenres");
+const { setGenres, setGenre } = require("../utils/setGenres");
 const getAllBooks = async (page, limit, ignoredGenres) => {
+  // let q = `SELECT * FROM ( SELECT b.id, b.title, b.author,b.cover,
+  // GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b
+  // LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id) AS sq
+  // HAVING id in (SELECT bg.book_id FROM  books_genres bg LEFT JOIN genres g on bg.genre_id=g.id`;
   let q = `SELECT * FROM ( SELECT b.id, b.title, b.author,b.cover,
-  GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b 
-  LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id) AS sq
-  HAVING id in (SELECT bg.book_id FROM  books_genres bg LEFT JOIN genres g on bg.genre_id=g.id`;
+    GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b 
+    LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id) AS sq
+    HAVING id in (SELECT b.id FROM books b  left join   books_genres bg on b.id=bg.book_id `;
   console.log("isArray=", Array.isArray(ignoredGenres));
   if (Array.isArray(ignoredGenres) && ignoredGenres.length > 0) {
     console.log("a");
     const placeholders = ignoredGenres.map(() => "?").join(", ");
-    q += " WHERE g.id NOT IN (" + placeholders + ")";
+    q += " WHERE bg.genre_id NOT IN (" + placeholders + ") ";
+    q += "OR bg.genre_id IS NULL";
   }
   q += ") LIMIT ? OFFSET ?";
   console.log(q);
 
   const offset = (page - 1) * limit;
   const [data] = await db.query(q, [...ignoredGenres, limit, offset]);
-  setGeneres(data);
-  const totalBooks = await getRowCount("books");
+  setGenres(data);
+  const totalBooks = await getBooksRowCount(ignoredGenres);
   return createPaginatedResult(page, limit, offset, totalBooks, data);
 };
 const getBookById = async (bookId) => {
-  const q =
-    "SELECT b.id,b.title,b.description,b.cover,b.author,count(b.id) as totalComments FROM books b left JOIN comments c on c.book_id=b.id where b.id=? group by b.id";
+  // const q =
+  //   "SELECT b.id,b.title,b.description,b.cover,b.author,count(b.id) as totalComments FROM books b left JOIN comments c on c.book_id=b.id where b.id=? group by b.id";
+  const q = `SELECT b.id,b.title,b.description,b.cover,b.author, GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b left JOIN books_genres bg on bg.book_id=b.id
+  left join genres g on bg.genre_id=g.id 
+  where b.id=? group by b.id`;
   const [data] = await db.query(q, [bookId]);
+  setGenre(data[0]);
   return data[0];
+};
+const getAllBooksByGenreId = async (genreId, page, limit) => {
+  const q = `SELECT * FROM ( SELECT b.id, b.title, b.author,b.cover,
+    GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b 
+    LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id) AS sq
+    HAVING id in (SELECT b.id FROM books b  left join   books_genres bg on b.id=bg.book_id  WHERE bg.genre_id IN (?))  LIMIT ? OFFSET ?`;
+  // const [data] = await db.query(q, [genreId]);
+  // console.log("data before  genreid=", data);
+  // setGenres(data);
+  // console.log("data genreid=", data);
+
+  const offset = (page - 1) * limit;
+  const [data] = await db.query(q, [genreId, limit, offset]);
+  console.log("data before  genreid=", data);
+  setGenres(data);
+  const totalBooks = await getBookRowCountByGenreId(genreId);
+  return createPaginatedResult(page, limit, offset, totalBooks, data);
+  // setGenres(data);
+  // console.log("data genreid=", data);
 };
 const createBook = async (values, genres) => {
   const q =
@@ -93,4 +123,5 @@ module.exports = {
   deleteBook,
   changeCover,
   changeGenres,
+  getAllBooksByGenreId,
 };
