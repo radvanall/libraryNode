@@ -15,7 +15,19 @@ const validateGetAllBooks = require("../utils/validateGetAllBooks");
 const getGenres = require("../utils/getGenres");
 const fs = require("fs");
 const path = require("path");
-const FILE_PATH = path.join(__dirname, "..", "..", "images", "books");
+// const FILE_PATH = path.join(__dirname, "..", "..", "images", "books");
+const FILE_PATH = path.join(
+  "C:",
+  "Users",
+  "Pc",
+  "Desktop",
+  "js",
+  "libraryReact",
+  "library",
+  "public",
+  "images",
+  "books"
+);
 const validateCreateBook = require("../utils/validateCreateBook");
 const asyncErrorHandler = require("../utils/asyncErrorHandler");
 const CustomError = require("../utils/CustomError");
@@ -47,7 +59,8 @@ const getAllBooksController = asyncErrorHandler(async (req, res, next) => {
   const data = await getAllBooks(
     parseInt(req.query.page),
     parseInt(req.query.limit),
-    genresArray
+    genresArray,
+    req.query.searchWord
   );
 
   return res.status(200).json(data);
@@ -89,7 +102,9 @@ const updateBookController = asyncErrorHandler(async (req, res, next) => {
   ];
 
   await updateBook(values);
-  return res.status(201).json("The book has been modified successfully");
+  return res
+    .status(201)
+    .json({ message: "The book has been modified successfully" });
 });
 
 const changeCoverController = asyncErrorHandler(async (req, res, next) => {
