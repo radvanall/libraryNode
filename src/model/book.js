@@ -4,14 +4,14 @@ const getBookRowCountByGenreId = require("../utils/getBookRowCountByGenreId");
 const getBooksRowCount = require("../utils/getBooksRowCount");
 const createPaginatedResult = require("../utils/createPaginatedResult");
 const { setGenres, setGenre } = require("../utils/setGenres");
-const getAllBooks = async (page, limit, ignoredGenres) => {
+const getAllBooks = async (page, limit, ignoredGenres, searchWord) => {
   // let q = `SELECT * FROM ( SELECT b.id, b.title, b.author,b.cover,
   // GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b
   // LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id) AS sq
   // HAVING id in (SELECT bg.book_id FROM  books_genres bg LEFT JOIN genres g on bg.genre_id=g.id`;
   let q = `SELECT * FROM ( SELECT b.id, b.title, b.author,b.cover,
     GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b 
-    LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id) AS sq
+    LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id  WHERE b.title like ? GROUP BY b.id) AS sq
     HAVING id in (SELECT b.id FROM books b  left join   books_genres bg on b.id=bg.book_id `;
   console.log("isArray=", Array.isArray(ignoredGenres));
   if (Array.isArray(ignoredGenres) && ignoredGenres.length > 0) {
@@ -22,11 +22,16 @@ const getAllBooks = async (page, limit, ignoredGenres) => {
   }
   q += ") LIMIT ? OFFSET ?";
   console.log(q);
-
+  const searchPattern = `%${searchWord}%`;
   const offset = (page - 1) * limit;
-  const [data] = await db.query(q, [...ignoredGenres, limit, offset]);
+  const [data] = await db.query(q, [
+    searchPattern,
+    ...ignoredGenres,
+    limit,
+    offset,
+  ]);
   setGenres(data);
-  const totalBooks = await getBooksRowCount(ignoredGenres);
+  const totalBooks = await getBooksRowCount(ignoredGenres, searchPattern);
   return createPaginatedResult(page, limit, offset, totalBooks, data);
 };
 const getBookById = async (bookId) => {
