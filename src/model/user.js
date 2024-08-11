@@ -1,7 +1,35 @@
 const db = require("../../config/dbConfig");
-const getAllUsers = async () => {
-  const q = "SELECT id,login,pass FROM users";
-  const [data] = await db.query(q);
+const getUsersRowCount = require("../utils/getUsersRowCount");
+const createPaginatedResult = require("../utils/createPaginatedResult");
+
+const getAllUsers = async (page, limit, role, searchWord) => {
+  let q = `select u.id,u.login,u.avatar,r.role,count(c.comment) as nrOfComments from users u left join users_roles ur on u.id=ur.users_id left join 
+  roles r on r.id=ur.roles_id left join comments c on c.user_id=u.id   `;
+
+  const searchPattern = `%${searchWord}%`;
+  const params = [];
+
+  if (role) {
+    q += `where `;
+    q += ` r.role=? `;
+    params.push(role);
+  }
+  if (searchWord) {
+    if (role) {
+      q += `and `;
+    } else q += `where `;
+    q += `u.login like ? `;
+    params.push(searchPattern);
+  }
+  q += `  group by u.id,u.login,u.avatar,r.role LIMIT ? OFFSET ?`;
+  const offset = (page - 1) * limit;
+  console.log(q);
+  const [data] = await db.query(q, [...params, limit, offset]);
+  console.log("data=", data);
+  const totalNumber = await getUsersRowCount(role, searchWord);
+  return createPaginatedResult(page, limit, offset, totalNumber, data);
+  // const q = "SELECT id,login,pass FROM users";
+  // const [data] = await db.query(q);
   return data;
 };
 const getUserById = async (userId) => {
