@@ -13,18 +13,41 @@ const {
 const deleteImage = require("../utils/deleteImage");
 const validateUpdate = require("../utils/validateUpdateUser");
 const validateCreate = require("../utils/validateCreateUser");
+const validateGetAllUsers = require("../utils/validateGetAllBooks");
+const validateAuth = require("../utils/validateAuth");
 const fs = require("fs");
 const path = require("path");
 const createToken = require("../utils/createToken");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const FILE_PATH = path.join(__dirname, "..", "..", "images", "users");
+// const FILE_PATH = path.join(__dirname, "..", "..", "images", "users");
+const FILE_PATH = path.join(
+  "C:",
+  "Users",
+  "Pc",
+  "Desktop",
+  "js",
+  "libraryReact",
+  "library",
+  "public",
+  "images",
+  "users"
+);
 const getFilePath = require("../utils/getFilePath");
 const asyncErrorHandler = require("../utils/asyncErrorHandler");
 const CustomError = require("../utils/CustomError");
 
 const getUsersController = asyncErrorHandler(async (req, res, next) => {
-  const data = await getAllUsers();
+  if (!validateGetAllUsers(req)) {
+    const error = new CustomError("No such page.", 404);
+    return next(error);
+  }
+  const data = await getAllUsers(
+    parseInt(req.query.page),
+    parseInt(req.query.limit),
+    req?.query?.role,
+    req?.query?.searchWord
+  );
   return res.status(200).json(data);
 });
 
@@ -77,7 +100,7 @@ const updateUserController = asyncErrorHandler(async (req, res, next) => {
     return next(error);
   }
   await modifyUser(values);
-  return res.status(201).json("The user has been modified");
+  return res.status(201).json({ message: "The user has been modified" });
 });
 
 const changeAvatarController = asyncErrorHandler(async (req, res, next) => {
@@ -107,11 +130,12 @@ const changeRoleController = asyncErrorHandler(async (req, res, next) => {
 });
 
 const authController = asyncErrorHandler(async (req, res, next) => {
-  if (!validateCreate(req)) {
+  if (!validateAuth(req)) {
+    console.log(req.query);
     const error = new CustomError("All fields are required", 403);
     return next(error);
   }
-  const values = [req.body.login, req.body.pass];
+  const values = [req.query.login, req.query.pass];
 
   const result = await getUserByLogin(values);
   console.log(result.role);
@@ -119,7 +143,7 @@ const authController = asyncErrorHandler(async (req, res, next) => {
     const error = new CustomError("Password or nickname are wrong.", 403);
     return next(error);
   }
-  const match = await bcrypt.compare(req.body.pass, result.pass);
+  const match = await bcrypt.compare(req.query.pass, result.pass);
   if (!match) {
     const error = new CustomError("Password or nickname are wrong.", 403);
     return next(error);
