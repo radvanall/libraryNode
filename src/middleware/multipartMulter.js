@@ -15,7 +15,7 @@ const multipartMulter = (folder) => {
   // });
 
   const types = ["image/png", "image/jpeg", "image/jpg"];
-  const maxSize = 10 * 1024 * 1024;
+  const maxSize = 50 * 1024 * 1024;
 
   const fileFilter = (req, file, cb) => {
     if (types.includes(file.mimetype)) {
