@@ -26,6 +26,14 @@ const getCommentByBookIdController = asyncErrorHandler(
       parseInt(req.query.limit),
       parseInt(req.query.page)
     );
+    console.log("data", data);
+    console.log(
+      "params=",
+      req.query.id,
+      req.query.totalComments,
+      req.query.limit,
+      req.query.page
+    );
     return res.status(200).json(data);
   }
 );
