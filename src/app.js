@@ -14,7 +14,7 @@ app.use("/books", require("./routes/bookRoutes"));
 app.use("/users", require("./routes/userRoutes"));
 app.use("/comments", require("./routes/commentRoutes"));
 app.use("/genres", require("./routes/genreRoutes"));
-
+//testing the git push
 app.all("*", (req, res, next) => {
   const err = new CustomError(
     `Cant find ${req.originalUrl} on the server !`,
