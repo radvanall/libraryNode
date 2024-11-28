@@ -28,9 +28,6 @@ const getAllUsers = async (page, limit, role, searchWord) => {
   console.log("data=", data);
   const totalNumber = await getUsersRowCount(role, searchWord);
   return createPaginatedResult(page, limit, offset, totalNumber, data);
-  // const q = "SELECT id,login,pass FROM users";
-  // const [data] = await db.query(q);
-  return data;
 };
 const getUserById = async (userId) => {
   console.log("getid=", userId);
@@ -93,7 +90,6 @@ const changeAvatar = async (values) => {
   await db.query(q, values);
 };
 const getUserByLogin = async (values) => {
-  // const q = "select * from users where login=?";
   const q =
     "select u.id,u.login,u.pass,u.avatar,u.token,r.role from users u left join users_roles ur on u.id=ur.users_id left join roles r on r.id=ur.roles_id where u.login=?";
   const [data] = await db.query(q, values[0]);
@@ -104,7 +100,6 @@ const setToken = async (values) => {
   await db.query(q, values);
 };
 const getUserByToken = async (token) => {
-  // const q = "select * from users where token=?";
   const q =
     "select u.id,u.login,u.pass,u.token,r.role from users u left join users_roles ur on u.id=ur.users_id left join roles r on r.id=ur.roles_id where u.token=?";
   const [data] = await db.query(q, [token]);
