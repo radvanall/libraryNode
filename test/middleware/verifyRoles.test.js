@@ -14,10 +14,6 @@ describe("verifyRoles middleware", () => {
   });
 
   it("should return 401 if role does not match any allowed role", async () => {
-    // app.use((req, res, next) => {
-    //   req.roles = 5159;
-    //   next();
-    // });
     app.get(
       "/test0",
       (req, res, next) => {
