@@ -15,7 +15,6 @@ const validateGetAllBooks = require("../utils/validateGetAllBooks");
 const getGenres = require("../utils/getGenres");
 const fs = require("fs");
 const path = require("path");
-// const FILE_PATH = path.join(__dirname, "..", "..", "images", "books");
 const FILE_PATH = path.join(
   "C:",
   "Users",
