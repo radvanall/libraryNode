@@ -85,7 +85,6 @@ const changeRole = async (values) => {
   await db.query(q2, values);
 };
 const changeAvatar = async (values) => {
-  console.log("values=", values);
   const q = "update users set `avatar`=? where id=?";
   await db.query(q, values);
 };
