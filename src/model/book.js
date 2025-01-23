@@ -49,19 +49,12 @@ const getAllBooksByGenreId = async (genreId, page, limit) => {
     GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b 
     LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id) AS sq
     HAVING id in (SELECT b.id FROM books b  left join   books_genres bg on b.id=bg.book_id  WHERE bg.genre_id IN (?))  LIMIT ? OFFSET ?`;
-  // const [data] = await db.query(q, [genreId]);
-  // console.log("data before  genreid=", data);
-  // setGenres(data);
-  // console.log("data genreid=", data);
-
   const offset = (page - 1) * limit;
   const [data] = await db.query(q, [genreId, limit, offset]);
   console.log("data before  genreid=", data);
   setGenres(data);
   const totalBooks = await getBookRowCountByGenreId(genreId);
   return createPaginatedResult(page, limit, offset, totalBooks, data);
-  // setGenres(data);
-  // console.log("data genreid=", data);
 };
 const createBook = async (values, genres) => {
   const q =
