@@ -5,10 +5,6 @@ const getBooksRowCount = require("../utils/getBooksRowCount");
 const createPaginatedResult = require("../utils/createPaginatedResult");
 const { setGenres, setGenre } = require("../utils/setGenres");
 const getAllBooks = async (page, limit, ignoredGenres, searchWord) => {
-  // let q = `SELECT * FROM ( SELECT b.id, b.title, b.author,b.cover,
-  // GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b
-  // LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id GROUP BY b.id) AS sq
-  // HAVING id in (SELECT bg.book_id FROM  books_genres bg LEFT JOIN genres g on bg.genre_id=g.id`;
   let q = `SELECT * FROM ( SELECT b.id, b.title, b.author,b.cover,
     GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b 
     LEFT JOIN books_genres bg ON b.id = bg.book_id LEFT JOIN genres g ON bg.genre_id = g.id  WHERE b.title like ? GROUP BY b.id) AS sq
@@ -35,8 +31,6 @@ const getAllBooks = async (page, limit, ignoredGenres, searchWord) => {
   return createPaginatedResult(page, limit, offset, totalBooks, data);
 };
 const getBookById = async (bookId) => {
-  // const q =
-  //   "SELECT b.id,b.title,b.description,b.cover,b.author,count(b.id) as totalComments FROM books b left JOIN comments c on c.book_id=b.id where b.id=? group by b.id";
   const q = `SELECT b.id,b.title,b.description,b.cover,b.author, GROUP_CONCAT(g.genre,'|',g.id) AS genres FROM books b left JOIN books_genres bg on bg.book_id=b.id
   left join genres g on bg.genre_id=g.id 
   where b.id=? group by b.id`;
