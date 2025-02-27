@@ -23,14 +23,11 @@ const getAllUsers = async (page, limit, role, searchWord) => {
   }
   q += `  group by u.id,u.login,u.avatar,r.role LIMIT ? OFFSET ?`;
   const offset = (page - 1) * limit;
-  console.log(q);
   const [data] = await db.query(q, [...params, limit, offset]);
-  console.log("data=", data);
   const totalNumber = await getUsersRowCount(role, searchWord);
   return createPaginatedResult(page, limit, offset, totalNumber, data);
 };
 const getUserById = async (userId) => {
-  console.log("getid=", userId);
   const q =
     "select u.id,u.login,u.avatar,u.pass,r.role,count(c.comment) as totalComments from users u left join users_roles ur on u.id=ur.users_id left join roles r on r.id=ur.roles_id left join comments c on c.user_id=u.id where u.id=? group by u.id,u.login,u.avatar,r.role";
   const [data] = await db.query(q, userId);
@@ -39,9 +36,7 @@ const getUserById = async (userId) => {
 const getUserRoleById = async (userId) => {
   const q =
     "select r.role from users_roles ur left join roles r on r.id=ur.roles_id where ur.users_id=?";
-
   const [data] = await db.query(q, [userId]);
-  console.log(data[0].role == 2001);
   return data[0];
 };
 const createUser = async (values) => {
@@ -57,7 +52,6 @@ const createUser = async (values) => {
   const insertId = res.insertId;
   const q3 = "insert into users_roles(`users_id`,`roles_id`) values(?,?)";
   await db.query(q3, [insertId, 2]);
-  console.log(insertId);
 };
 const deleteUser = async (userId) => {
   const q = "delete from users  where id=?";
