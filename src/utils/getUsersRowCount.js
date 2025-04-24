@@ -18,7 +18,6 @@ const getUsersRowCount = async (role, searchWord) => {
   }
   q += ` group by u.id,u.login,u.avatar,r.role) as t `;
   const [res] = await db.query(q, [...params]);
-  console.log(res);
   return res[0].totalCount;
 };
 module.exports = getUsersRowCount;
